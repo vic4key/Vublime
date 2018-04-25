@@ -1,0 +1,11 @@
+{
+	"captions":
+	{
+		"info": "Vublime 1.0\n\nCopyright (c) Vic P.",
+		"save_as_temporary": "Save Unsaved File As Temporary",
+		"about": "About",
+	},
+	"temporary_dir": "E:\\Codes\\SLTs\\Vublime\\Temporary",
+	"append_dot": true,
+	"file_name_by_time": true,
+}

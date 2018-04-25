@@ -1,0 +1,6 @@
+[
+	{
+		"caption": "Vublime - Save Unsaved File As Temporary",
+		"command": "vublime_save_as_temporary",
+	}
+]
