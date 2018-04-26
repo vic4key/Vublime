@@ -80,7 +80,16 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 		print(file_path)
 
 		# confirm the file path
-		self.view.window().show_input_panel("Save As Temporary File :", file_path, self.save_as_temporary, None, None)
+		confirm_file_path = settings.get("confirm_file_path", True)
+		if confirm_file_path :
+			self.view.window().show_input_panel(
+				"Save As Temporary File :",
+				file_path,
+				self.save_as_temporary,
+				None,
+				None
+			)
+		else : self.save_as_temporary(file_path)
 
 		return
 

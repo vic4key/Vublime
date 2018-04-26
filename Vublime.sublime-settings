@@ -6,6 +6,7 @@
 		"about": "About",
 	},
 	"temporary_dir": "E:\\Codes\\SLTs\\Vublime\\Temporary",
-	"append_dot": true,
+	"append_dot": false,
 	"file_name_by_time": true,
+	"confirm_file_path": true,
 }
