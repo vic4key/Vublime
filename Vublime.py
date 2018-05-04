@@ -132,6 +132,9 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
 		return data.decode("utf-8") if type(data).__name__ == "bytes" else str(data)
 
+	def get_executable_dir(self) :
+		return os.path.dirname(sublime.executable_path())
+
 	def get_extension_by_current_syntax(self) : # in the section `file_extensions:`
 
 		result = ""
@@ -153,7 +156,7 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
 				syntax_file_data = ""
 
-				package_path = "%s\\%s\\%s" % (os.getcwd(), package_folder, package_name)
+				package_path = "%s\\%s\\%s" % (self.get_executable_dir(), package_folder, package_name)
 				syntax_file_data = self.read_file_in_package(package_path, syntax_name)
 
 				if len(syntax_file_data) > 0 :
