@@ -1,7 +1,7 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, time, sys
+import os, tempfile, datetime, time, re, zipfile
 import sublime, sublime_plugin
 
 VL_FILE_PATH = __file__
@@ -74,13 +74,20 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 		file_path += "\\"
 		file_path += file_name
 
-		# append dot character
-		append_dot = settings.get("append_dot", False)
-		if append_dot : file_path += "."
-		print(file_path)
+		# auto append the extension by the current syntax
+		auto_extension = settings.get("auto_extension", False)
+		extension = ""
+		if auto_extension :
+			extension = self.get_extension_by_current_syntax()
+			if len(extension) > 0 :
+				file_path += "."
+				file_path += extension
+			pass
+		pass
 
 		# confirm the file path
 		confirm_file_path = settings.get("confirm_file_path", True)
+		if auto_extension and len(extension) == 0 : confirm_file_path = True
 		if confirm_file_path :
 			self.view.window().show_input_panel(
 				"Save As Temporary File :",
@@ -101,3 +108,62 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 		sublime.status_message("Saved as '%s'" % file_path)
 
 		return
+
+	def read_file_in_package(self, zip_file_path, file_name_inside_zip) :
+
+		data = ""
+
+		try :
+
+			if not os.path.exists(zip_file_path) : return data
+
+			if not zipfile.is_zipfile(zip_file_path) : return data
+
+			zip = zipfile.ZipFile(zip_file_path)
+
+			# file_names = map(str.lower, zip.namelist())
+			# if not (file_name_inside_zip in file_names) : return data
+
+			f = zip.open(file_name_inside_zip)
+			data = f.read()
+			f.close()
+
+		except Exception as e : data = ""
+
+		return data.decode("utf-8") if type(data).__name__ == "bytes" else str(data)
+
+	def get_extension_by_current_syntax(self) : # in the section `file_extensions:`
+
+		result = ""
+
+		try :
+
+			syntax_package_file_path = (self.view.settings().get("syntax"))
+
+			package_folder = package_name = syntax_name = ""
+
+			l = re.compile(r"(.*)/(.*)/(.*).sublime-syntax").findall(syntax_package_file_path)
+			if len(l) == 1 :
+				package_folder, package_name, syntax_name = l[0]
+				package_name += ".sublime-package"
+				syntax_name  += ".sublime-syntax"
+			pass
+
+			if len(package_name) != 0 and len(syntax_name) != 0:
+
+				syntax_file_data = ""
+
+				package_path = "%s\\%s\\%s" % (os.getcwd(), package_folder, package_name)
+				syntax_file_data = self.read_file_in_package(package_path, syntax_name)
+
+				if len(syntax_file_data) > 0 :
+					matches = re.finditer(r"(?<=^\s\s-\s)([^\s]*)(?=[\s.*\n])", syntax_file_data, re.MULTILINE)
+					extensions = [match.group() for i, match in enumerate(matches)]
+					if len(extensions) > 0 : result = extensions[0]
+				pass
+
+			pass
+
+		except Exception as e : result = ""
+
+		return result
