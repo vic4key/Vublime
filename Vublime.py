@@ -1,7 +1,7 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, time, re, zipfile
+import os, tempfile, datetime, re, zipfile
 import sublime, sublime_plugin
 
 VL_FILE_PATH = __file__
