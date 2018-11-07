@@ -71,7 +71,7 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
 		# create the file path
 		file_path  = temporary_dir
-		file_path += "\\"
+		file_path += os.sep if file_path[-1] != os.sep else ""
 		file_path += file_name
 
 		# auto append the extension by the current syntax
@@ -156,7 +156,8 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
 				syntax_file_data = ""
 
-				package_path = "%s\\%s\\%s" % (self.get_executable_dir(), package_folder, package_name)
+				fmt = "%s"; fmt += os.sep; fmt += "%s"; fmt += os.sep; fmt += "%s";
+				package_path = fmt % (self.get_executable_dir(), package_folder, package_name)
 				syntax_file_data = self.read_file_in_package(package_path, syntax_name)
 
 				if len(syntax_file_data) > 0 :
