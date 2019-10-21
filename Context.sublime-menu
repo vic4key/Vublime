@@ -10,6 +10,9 @@
 				"command": "vublime_save_as_temporary"
 			},
 			{
+				"command": "vublime_open_file_in_view"
+			},
+			{
 				"command": "vublime_about"
 			},
 		]

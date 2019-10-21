@@ -2,5 +2,9 @@
 	{
 		"caption": "Vublime - Save Unsaved File As Temporary",
 		"command": "vublime_save_as_temporary",
-	}
+	},
+	{
+		"caption": "Vublime - Open File in View",
+		"command": "vublime_open_file_in_view",
+	},
 ]
