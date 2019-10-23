@@ -200,6 +200,8 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
             file_dir = os.path.dirname(self.view.file_name())
             file_dir = self.normalize_path(file_dir)
 
+            file_path = file_name
+
             # file_dir_parts = file_dir.split(os.path.sep)
             # file_path, tmp_file_dir = "", ""
             # for file_dir_part in file_dir_parts:
@@ -209,7 +211,7 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
             #         break
 
             # join the file name with the directory of the current viewing file
-            if not os.path.isfile(file_name):
+            if not os.path.isfile(file_path):
                 file_dir  = os.path.dirname(self.view.file_name())
                 file_dir  = self.normalize_path(file_dir)
                 file_path = os.path.join(file_dir, file_name)
