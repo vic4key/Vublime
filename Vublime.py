@@ -291,8 +291,7 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
             name, pattern, dtype = group["name"], group["pattern"], group["type"]
 
             matches = RegEx(selected_text, pattern)
-
-            print(matches)
+            # print(matches)
 
             numbers = list(map(lambda v:\
                 TYPES[dtype](float(v))\
@@ -307,7 +306,9 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
         # df = pd.DataFrame(result)
         # print(df)
-        for k, v in result.items(): print(k, ":", v)
+
+        total = sum(result.values())
+        for k, v in result.items(): print(k, ":", v, "(%.2f%%)" % (100 * float(v) / total))
 
         return
 
