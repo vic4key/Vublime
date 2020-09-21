@@ -7,4 +7,8 @@
 		"caption": "Vublime - Open File in View",
 		"command": "vublime_open_file_in_view",
 	},
+	{
+		"caption": "Vublime - Report Logging",
+		"command": "vublime_report_logging_in_view",
+	},
 ]

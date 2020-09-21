@@ -3,6 +3,7 @@
 
 import os, tempfile, datetime, re, zipfile
 import sublime, sublime_plugin
+# import pandas as pd
 
 VL_FILE_PATH = __file__
 VL_FILE_NAME = os.path.basename(VL_FILE_PATH)
@@ -239,3 +240,82 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
 
     def normalize_path(self, path):
         return path.replace("\\\\", os.path.sep).replace("\\", os.path.sep).replace("/", os.path.sep)
+
+# Report Logging
+
+# https://regex101.com/
+
+def RegEx(text, regex, flags = re.MULTILINE | re.IGNORECASE):
+    result = re.findall(regex, text, flags)
+    if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
+    return result
+
+groups = [] # load from anywhere
+
+groups = [
+    {
+        "name": "drag_enter",
+        "pattern": r".*DragEnter -> ([\.\d]+)s",
+        "type": "str",
+    },
+    {
+        "name": "get_drag_window",
+        "pattern": r".*GetDragWindow -> ([\.\d]+)s",
+        "type": "int",
+    },
+    {
+        "name": "update_drop_description",
+        "pattern": r".*UpdateDropDescription -> ([\.\d]+)s",
+        "type": "float",
+    },
+]
+
+TYPES = {
+    "str": str,
+    "int": int,
+    "float": float,
+}
+
+class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        # matches = self.view.find_all(r".*")
+
+        selected_text = self.view.substr(self.view.line(self.view.sel()[0]))
+        selected_text = selected_text.strip()
+        # print(selected_text)
+
+        result = {}
+
+        for group in groups:
+            name, pattern, dtype = group["name"], group["pattern"], group["type"]
+
+            matches = RegEx(selected_text, pattern)
+
+            print(matches)
+
+            numbers = list(map(lambda v:\
+                TYPES[dtype](float(v))\
+                if v.replace('.', '').isdigit()\
+                else TYPES[dtype](0.), matches))
+
+            total = 0 if TYPES[dtype] is str else sum(numbers)
+
+            # print(name, numbers, total)
+            if name in result.keys(): result[name] += total
+            else: result[name] = total
+
+        # df = pd.DataFrame(result)
+        # print(df)
+        for k, v in result.items(): print(k, ":", v)
+
+        return
+
+    def description(self) :
+        return captions.get("report_logging_in_view")
+
+    def is_enabled(self) :
+        return True
+
+    def is_visible(self) :
+        return True

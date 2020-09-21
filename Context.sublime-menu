@@ -13,6 +13,9 @@
 				"command": "vublime_open_file_in_view"
 			},
 			{
+				"command": "vublime_report_logging_in_view"
+			},
+			{
 				"command": "vublime_about"
 			},
 		]
