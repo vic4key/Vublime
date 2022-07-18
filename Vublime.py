@@ -306,12 +306,14 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
         # df = pd.DataFrame(result)
         # print(df)
+        
+        print(" [REPORT] ".center(80, "-"))
 
         total = sum(result.values())
         if total == 0:
-            for k, v in result.items(): print(k, ":", v)
+            for k, v in result.items(): print("%s : %.3f" % (k, float(v)))
         else:
-            for k, v in result.items(): print(k, ":", v, "(%.2f%%)" % (100 * float(v) / total))
+            for k, v in result.items(): print("%s : %.3f (%.2f%%)" % (k, float(v), (100 * float(v) / total)))
 
         return
 
