@@ -310,12 +310,15 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
         print(" [REPORT] ".center(80, "-"))
 
         total = sum(result.values())
-        if total == 0:
-            for k, v in result.items(): print("%s : %.3f" % (k, float(v)))
-        else:
-            for k, v in result.items(): print("%s : %.3f (%.2f%%)" % (k, float(v), (100 * float(v) / total)))
 
-        return
+        for group in groups:
+            if group["name"] in result.keys():
+                k, v = group["name"], result[name]
+                if total == 0:
+                    print("%s : %.3f" % (k, float(v)))
+                else:
+                    print("%s : %.3f" % (k, float(v)))
+                    # print("%s : %.3f (%.2f%%)" % (k, float(v), (100 * float(v) / total)))
 
     def description(self) :
         return captions.get("report_logging_in_view")
