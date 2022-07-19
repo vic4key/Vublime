@@ -250,24 +250,12 @@ def RegEx(text, regex, flags = re.MULTILINE | re.IGNORECASE):
     if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
     return result
 
-groups = [] # load from anywhere
-
-groups = [
-    {
-        "name": "drag_enter",
-        "pattern": r".*DragEnter -> ([\.\d]+)s",
-        "type": "str",
-    },
-    {
-        "name": "get_drag_window",
-        "pattern": r".*GetDragWindow -> ([\.\d]+)s",
-        "type": "int",
-    },
-    {
-        "name": "update_drop_description",
-        "pattern": r".*UpdateDropDescription -> ([\.\d]+)s",
-        "type": "float",
-    },
+groups = [ # can be loaded from anywhere
+    # {
+    #     "name": "this is a example",
+    #     "pattern": r".* this is a regex pattern ([\.\d]+)",
+    #     "type": "float", # str, int, float
+    # },
 ]
 
 TYPES = {
@@ -312,8 +300,9 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
         total = sum(result.values())
 
         for group in groups:
-            if group["name"] in result.keys():
-                k, v = group["name"], result[name]
+            name, _, __ = group["name"], group["pattern"], group["type"]
+            if name in result.keys():
+                k, v = name, result[name]
                 if total == 0:
                     print("%s : %.3f" % (k, float(v)))
                 else:
