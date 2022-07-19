@@ -281,10 +281,13 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
             matches = RegEx(selected_text, pattern)
             # print(matches)
 
-            numbers = list(map(lambda v:\
-                TYPES[dtype](float(v))\
-                if v.replace('.', '').isdigit()\
-                else TYPES[dtype](0.), matches))
+            try:
+                numbers = list(map(lambda v:\
+                    TYPES[dtype](float(v))\
+                    if v.replace('.', '').isdigit()\
+                    else TYPES[dtype](0.), matches))
+            except Exception as e:
+                print("ERROR: An error has occurred in `%s` (%s)" % (name, str(e)))
 
             total = 0 if TYPES[dtype] is str else sum(numbers)
 
