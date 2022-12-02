@@ -1,0 +1,9 @@
+{
+  "groups": [
+    {
+      "name": "this is an example name",
+      "pattern": "this is an example pattern ([\\.\\d]+)",
+      "type": "float (or. str, int, float)"
+    }
+  ]
+}

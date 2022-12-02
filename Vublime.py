@@ -1,13 +1,14 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, re, zipfile
+import os, tempfile, datetime, re, zipfile, json
 import sublime, sublime_plugin
 # import pandas as pd
 
 VL_FILE_PATH = __file__
 VL_FILE_NAME = os.path.basename(VL_FILE_PATH)
 VL_FILE_NAME_NOEXT = os.path.splitext(VL_FILE_NAME)[0]
+VL_FILE_DIR  = os.path.dirname(VL_FILE_PATH)
 VL_FILE_SETTINGS   = VL_FILE_NAME_NOEXT + ".sublime-settings"
 
 # Settings
@@ -267,6 +268,19 @@ TYPES = {
 class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
+
+        # load patterns from json file
+        groups = []
+        Vublime_json = "Vublime.json"
+        try:
+            file_path = os.path.join(VL_FILE_DIR, Vublime_json)
+            with open(file_path, "r", encoding="utf8") as f:
+                groups = json.load(f)["groups"]
+        except Exception as e:
+            print("Failed to load file '%s'" % Vublime_json, e)
+            return
+        # print(groups)
+
         # matches = self.view.find_all(r".*")
 
         selected_text = self.view.substr(self.view.line(self.view.sel()[0]))
