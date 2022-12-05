@@ -36,6 +36,11 @@
 								"args": {"file": "${packages}/User/Vublime.sublime-settings"},
 								"caption": "Settings – User"
 							},
+							{
+								"command": "open_file",
+								"args": {"file": "${packages}/User/Vublime.json"},
+								"caption": "Settings – Report Patterns"
+							},
 						]
 					}
 				]
