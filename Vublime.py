@@ -251,14 +251,6 @@ def RegEx(text, regex, flags = re.MULTILINE | re.IGNORECASE):
     if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
     return result
 
-groups = [ # can be loaded from anywhere
-    # {
-    #     "name": "this is a example",
-    #     "pattern": r".* this is a regex pattern ([\.\d]+)",
-    #     "type": "float", # str, int, float
-    # },
-]
-
 TYPES = {
     "str": str,
     "int": int,
@@ -282,6 +274,7 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
         # print(groups)
 
         # matches = self.view.find_all(r".*")
+        # print(matches)
 
         selected_text = self.view.substr(self.view.line(self.view.sel()[0]))
         selected_text = selected_text.strip()
