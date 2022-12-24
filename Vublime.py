@@ -298,7 +298,15 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
             except Exception as e:
                 print("ERROR: An error has occurred in `%s` (%s)" % (name, str(e)))
 
-            total = 0 if TYPES[dtype] is str else sum(numbers)
+            total = 0
+            try:
+                total = 0 if TYPES[dtype] is str else sum(numbers)
+            except KeyError as e:
+                print("ERROR: Not yet defined groups in `Vublime.json`")
+                return
+            except Exception as e:
+                print(e)
+                return
 
             # print(name, numbers, total)
             if name in result.keys(): result[name] += total
