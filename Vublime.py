@@ -203,6 +203,8 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
             file_dir = self.normalize_path(file_dir)
 
             file_path = file_name
+            if file_path.startswith(("\\", "/")):
+                file_path = file_name[1:]
 
             # file_dir_parts = file_dir.split(os.path.sep)
             # file_path, tmp_file_dir = "", ""
