@@ -1,7 +1,7 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, re, zipfile, json
+import os, tempfile, datetime, re, zipfile, json, yaml
 import sublime, sublime_plugin, sublime_api
 from sublime import View
 
@@ -36,6 +36,36 @@ VL_POPUP_STYLE = '''
 </style>
 '''
 
+def _read_file_in_package(zip_file_path, file_name_inside_zip):
+    if os.path.exists(zip_file_path) and zipfile.is_zipfile(zip_file_path):
+        zip = zipfile.ZipFile(zip_file_path)
+        with zip.open(file_name_inside_zip) as f:
+            print(f, zip_file_path, file_name_inside_zip)
+            return f.read()
+    return None
+
+def _get_executable_dir():
+    return os.path.dirname(sublime.executable_path())
+
+def _get_view_syntax(view):
+    try :
+        syntax_package_file_path = view.settings().get("syntax")
+        if syntax_package_file_path.endswith(".sublime-syntax"):
+            l = re.compile(r".*/(.*).sublime-syntax").findall(syntax_package_file_path)
+            if len(l) == 1:
+                sublime_syntax_file_name  = l[0] + ".sublime-syntax"
+                sublime_package_file_path = l[0] + ".sublime-package"
+                sublime_package_file_path = os.path.join(_get_executable_dir() + "/Packages", sublime_package_file_path)
+                syntax_file_data = _read_file_in_package(sublime_package_file_path, sublime_syntax_file_name)
+                if syntax_file_data:
+                    syntax_file_yaml = yaml.safe_load(syntax_file_data)
+                    extensions = syntax_file_yaml["file_extensions"]
+                    return (syntax_file_yaml["name"], syntax_file_yaml["file_extensions"][0])
+        elif syntax_package_file_path.endswith(".tmLanguage"):
+            print("not support tmLanguage")
+    except Exception as e: print(e)
+    return (None, None)
+
 def _make_vl_popup_content(view, point) -> str:
     word = view.substr(view.word(point))
     return "Mouse is hovering on '" + word + "'"
@@ -69,6 +99,10 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
         self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
 # Listener
+
+class ViewTracking(sublime_plugin.ViewEventListener):
+    def on_activated_async(self):
+        pass # print(_get_view_syntax(self.view))
 
 class HoverTextEventListener(sublime_plugin.EventListener):
   def on_hover(self, view, point, hover_zone):
@@ -114,7 +148,6 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
         temporary_dir = settings.get("temporary_dir", "")
         if temporary_dir == None or temporary_dir == "" :
             temporary_dir = tempfile.gettempdir()
-        pass
 
         # file name by tempfile
         file_name = next(tempfile._get_candidate_names())
@@ -132,12 +165,10 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
         auto_extension = settings.get("auto_extension", False)
         extension = ""
         if auto_extension :
-            extension = self.get_extension_by_current_syntax()
+            _, extension = _get_view_syntax(self.view)
             if len(extension) > 0 :
                 file_path += "."
                 file_path += extension
-            pass
-        pass
 
         # confirm the file path
         confirm_file_path = settings.get("confirm_file_path", True)
@@ -152,79 +183,11 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
             )
         else : self.save_as_temporary(file_path)
 
-        return
-
     def save_as_temporary(self, file_path) :
-
         # save to temporary directory
         self.view.retarget(file_path)
         self.view.run_command("save")
         sublime.status_message("Saved as '%s'" % file_path)
-
-        return
-
-    def read_file_in_package(self, zip_file_path, file_name_inside_zip) :
-
-        data = ""
-
-        try :
-
-            if not os.path.exists(zip_file_path) : return data
-
-            if not zipfile.is_zipfile(zip_file_path) : return data
-
-            zip = zipfile.ZipFile(zip_file_path)
-
-            # file_names = map(str.lower, zip.namelist())
-            # if not (file_name_inside_zip in file_names) : return data
-
-            f = zip.open(file_name_inside_zip)
-            data = f.read()
-            f.close()
-
-        except Exception as e : data = ""
-
-        return data.decode("utf-8") if type(data).__name__ == "bytes" else str(data)
-
-    def get_executable_dir(self) :
-        return os.path.dirname(sublime.executable_path())
-
-    def get_extension_by_current_syntax(self) : # in the section `file_extensions:`
-
-        result = ""
-
-        try :
-
-            syntax_package_file_path = (self.view.settings().get("syntax"))
-
-            package_folder = package_name = syntax_name = ""
-
-            l = re.compile(r"(.*)/(.*)/(.*).sublime-syntax").findall(syntax_package_file_path)
-            if len(l) == 1 :
-                package_folder, package_name, syntax_name = l[0]
-                package_name += ".sublime-package"
-                syntax_name  += ".sublime-syntax"
-            pass
-
-            if len(package_name) != 0 and len(syntax_name) != 0:
-
-                syntax_file_data = ""
-
-                fmt = "%s"; fmt += os.sep; fmt += "%s"; fmt += os.sep; fmt += "%s";
-                package_path = fmt % (self.get_executable_dir(), package_folder, package_name)
-                syntax_file_data = self.read_file_in_package(package_path, syntax_name)
-
-                if len(syntax_file_data) > 0 :
-                    matches = re.finditer(r"(?<=^\s\s-\s)([^\s]*)(?=[\s.*\n])", syntax_file_data, re.MULTILINE)
-                    extensions = [match.group() for i, match in enumerate(matches)]
-                    if len(extensions) > 0 : result = extensions[0]
-                pass
-
-            pass
-
-        except Exception as e : result = ""
-
-        return result
 
 # Open File in View
 
@@ -281,8 +244,6 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
 
             # open the file on view
             self.view.window().open_file(file_path)
-        pass
-    pass
 
     def description(self) :
         return captions.get("open_file_in_view")
@@ -402,5 +363,3 @@ def plugin_loaded():
     msg_ready = VL_FILE_NAME_NOEXT + " -> READY"
     sublime.status_message(msg_ready)
     print(msg_ready)
-
-    return
