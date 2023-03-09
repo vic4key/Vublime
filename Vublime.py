@@ -2,8 +2,8 @@
 # Author Vic P.
 
 import os, tempfile, datetime, re, zipfile, json
-import sublime, sublime_plugin
-# import pandas as pd
+import sublime, sublime_plugin, sublime_api
+from sublime import View
 
 VL_FILE_PATH = __file__
 VL_FILE_NAME = os.path.basename(VL_FILE_PATH)
@@ -18,46 +18,63 @@ captions = None
 
 # Extend built-in popup
 
-import sublime_api
-from sublime import View
+VL_POPUP_TITLE = "<h1>Vublime</h1>"
+VL_POPUP_STYLE = '''
+<style>
+    body {
+        font-family: system;
+    }
+    h1 {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin: 0 0 0.25em 0;
+    }
+    p {
+        font-size: 1.05rem;
+        margin: 0;
+    }
+</style>
+'''
+
+def _make_popup_content(view: View) -> str:
+    result  = VL_POPUP_TITLE
+    result += "<p>"
+    result += "this is a sample"
+    result += "</p>"
+    return result
 
 def _hooked_show_popup(self, content, flags=0, location=-1,
     max_width=320, max_height=240, on_navigate=None, on_hide=None):
 
-    # print(content)
+    if content.find(VL_POPUP_TITLE) == -1:
+        TAG_STYLE_CLOSED = "</style>"
+        insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
 
-    my_content  = "<h1>Vublime</h1>"
-    my_content += "<p>Hello World<p>"
-    my_content += "<br>"
+        new_content  = ""
+        new_content += content[:insert_position]
+        new_content += _make_popup_content(self)
+        new_content += "<br>"
+        new_content += content[insert_position:]
 
-    TAG_STYLE_CLOSED = "</style>"
-    insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
-    new_content  = ""
-    new_content += content[:insert_position]
-    new_content += my_content
-    new_content += content[insert_position:]
+        new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
+        new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
 
-    new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
-    new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
+        content = new_content
 
     sublime_api.view_show_popup(
-        self.view_id, location, new_content, flags, max_width, max_height,
-        on_navigate, on_hide)
+        self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
-def plugin_loaded():
+# Listener
 
-    global settings, captions
-    settings = sublime.load_settings(VL_FILE_SETTINGS)
-    captions = settings.get("captions")
-
-    extend_popup = settings.get("extend_popup")
-    if extend_popup: View.show_popup = _hooked_show_popup
-
-    msg_ready = VL_FILE_NAME_NOEXT + " -> READY"
-    sublime.status_message(msg_ready)
-    print(msg_ready)
-
-    return
+class HoverTextEventListener(sublime_plugin.EventListener):
+  def on_hover(self, view, point, hover_zone):
+    if not view.is_popup_visible():
+        my_content  = ""
+        my_content += "<body id=show-definitions>"
+        my_content += VL_POPUP_STYLE
+        my_content += _make_popup_content(view)
+        my_content += "</body>"
+        view.show_popup(my_content, location=point)
 
 # Commands
 
@@ -368,3 +385,18 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
     def is_visible(self) :
         return True
+
+def plugin_loaded():
+
+    global settings, captions
+    settings = sublime.load_settings(VL_FILE_SETTINGS)
+    captions = settings.get("captions")
+
+    extend_popup = settings.get("extend_popup")
+    if extend_popup: View.show_popup = _hooked_show_popup
+
+    msg_ready = VL_FILE_NAME_NOEXT + " -> READY"
+    sublime.status_message(msg_ready)
+    print(msg_ready)
+
+    return
