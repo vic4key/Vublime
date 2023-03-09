@@ -3,6 +3,7 @@
 	"auto_extension": true,
 	"file_name_by_time": false,
 	"confirm_file_path": false,
+	"extend_popup": true,
 	"captions":
 	{
 		"info": "Vublime 1.0\n\nCopyright (c) Vic P.",

@@ -16,11 +16,42 @@ VL_FILE_SETTINGS   = VL_FILE_NAME_NOEXT + ".sublime-settings"
 settings = None
 captions = None
 
+# Extend built-in popup
+
+import sublime_api
+from sublime import View
+
+def _hooked_show_popup(self, content, flags=0, location=-1,
+    max_width=320, max_height=240, on_navigate=None, on_hide=None):
+
+    # print(content)
+
+    my_content  = "<h1>Vublime</h1>"
+    my_content += "<p>Hello World<p>"
+    my_content += "<br>"
+
+    TAG_STYLE_CLOSED = "</style>"
+    insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
+    new_content  = ""
+    new_content += content[:insert_position]
+    new_content += my_content
+    new_content += content[insert_position:]
+
+    new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
+    new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
+
+    sublime_api.view_show_popup(
+        self.view_id, location, new_content, flags, max_width, max_height,
+        on_navigate, on_hide)
+
 def plugin_loaded():
 
     global settings, captions
     settings = sublime.load_settings(VL_FILE_SETTINGS)
     captions = settings.get("captions")
+
+    extend_popup = settings.get("extend_popup")
+    if extend_popup: View.show_popup = _hooked_show_popup
 
     msg_ready = VL_FILE_NAME_NOEXT + " -> READY"
     sublime.status_message(msg_ready)
