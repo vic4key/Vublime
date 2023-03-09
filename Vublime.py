@@ -234,6 +234,8 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
             file_dir = self.normalize_path(file_dir)
 
             file_path = file_name
+            if file_path.startswith(("\\", "/")):
+                file_path = file_name[1:]
 
             # file_dir_parts = file_dir.split(os.path.sep)
             # file_path, tmp_file_dir = "", ""
@@ -327,7 +329,15 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
             except Exception as e:
                 print("ERROR: An error has occurred in `%s` (%s)" % (name, str(e)))
 
-            total = 0 if TYPES[dtype] is str else sum(numbers)
+            total = 0
+            try:
+                total = 0 if TYPES[dtype] is str else sum(numbers)
+            except KeyError as e:
+                print("ERROR: Not yet defined groups in `Vublime.json`")
+                return
+            except Exception as e:
+                print(e)
+                return
 
             # print(name, numbers, total)
             if name in result.keys(): result[name] += total
