@@ -58,7 +58,7 @@ def _get_view_syntax(view):
                 sublime_package_file_path = os.path.join(_get_executable_dir() + "/Packages", sublime_package_file_path)
                 syntax_file_data = _read_file_in_package(sublime_package_file_path, sublime_syntax_file_name)
                 if syntax_file_data:
-                    syntax_file_yaml = yaml.safe_load(syntax_file_data)
+                    syntax_file_yaml = yaml.load(syntax_file_data, Loader=yaml.loader.BaseLoader)
                     extensions = syntax_file_yaml["file_extensions"]
                     return (syntax_file_yaml["name"], syntax_file_yaml["file_extensions"][0])
         elif syntax_package_file_path.endswith(".tmLanguage"):
@@ -129,7 +129,6 @@ class VublimeAboutCommand(sublime_plugin.TextCommand) :
 
     def run(self, edit) :
         sublime.message_dialog(captions.get("info"))
-        return
 
 class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
