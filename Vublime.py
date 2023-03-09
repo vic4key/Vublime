@@ -36,10 +36,14 @@ VL_POPUP_STYLE = '''
 </style>
 '''
 
-def _make_popup_content(view: View) -> str:
+def _make_vl_popup_content(view, point) -> str:
+    word = view.substr(view.word(point))
+    return "Mouse is hovering on '" + word + "'"
+
+def _make_vl_popup_body(view: View, point) -> str:
     result  = VL_POPUP_TITLE
     result += "<p>"
-    result += "this is a sample"
+    result += _make_vl_popup_content(view, point)
     result += "</p>"
     return result
 
@@ -52,7 +56,7 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
 
         new_content  = ""
         new_content += content[:insert_position]
-        new_content += _make_popup_content(self)
+        new_content += _make_vl_popup_body(self, location)
         new_content += "<br>"
         new_content += content[insert_position:]
 
@@ -72,7 +76,7 @@ class HoverTextEventListener(sublime_plugin.EventListener):
         my_content  = ""
         my_content += "<body id=show-definitions>"
         my_content += VL_POPUP_STYLE
-        my_content += _make_popup_content(view)
+        my_content += _make_vl_popup_body(view, point)
         my_content += "</body>"
         view.show_popup(my_content, location=point)
 
