@@ -98,7 +98,7 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
     sublime_api.view_show_popup(
         self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
-# Listener
+# Listeners
 
 class ViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
