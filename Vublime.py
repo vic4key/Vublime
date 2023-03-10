@@ -141,6 +141,7 @@ def _get_parser(file_type):
 class ViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
         file_path = self.view.file_name()
+        if type(file_path) is bytes: file_path = file_path.decode("utf-8")
         file_name = os.path.basename(file_path)
         file_type, _ = _get_view_syntax(self.view)
         key = "%s_%s" % (file_type, file_name)
