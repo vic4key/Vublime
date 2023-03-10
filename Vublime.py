@@ -82,7 +82,7 @@ def _get_view_syntax(view):
 
 def _make_vl_popup_content(view, point) -> str:
     word = view.substr(view.word(point))
-    text = "Mouse is hovering on '%s'" % word
+    text = "No additional information for '%s'" % word
     try:
         global _view_parser
         if _view_parser:
@@ -160,7 +160,8 @@ class HoverTextEventListener(sublime_plugin.EventListener):
         my_content += _make_vl_popup_body(view, point)
         my_content += "</body>"
         width, height = view.viewport_extent()
-        view.show_popup(my_content, location=point, max_width=width, max_height=height)
+        view.show_popup(
+          my_content, location=point, max_width=int(width * 0.5), max_height=int(height))
 
 # Commands
 
