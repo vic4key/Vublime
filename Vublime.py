@@ -5,6 +5,10 @@ import os, tempfile, datetime, re, zipfile, json, yaml, plistlib
 import sublime, sublime_plugin, sublime_api
 from sublime import View
 
+from .make_var import *
+_view_parsers = {}
+_view_parser  = None
+
 VL_FILE_PATH = __file__
 VL_FILE_NAME = os.path.basename(VL_FILE_PATH)
 VL_FILE_NAME_NOEXT = os.path.splitext(VL_FILE_NAME)[0]
@@ -78,7 +82,16 @@ def _get_view_syntax(view):
 
 def _make_vl_popup_content(view, point) -> str:
     word = view.substr(view.word(point))
-    return "Mouse is hovering on '" + word + "'"
+    text = "Mouse is hovering on '%s'" % word
+    try:
+        global _view_parser
+        if _view_parser:
+            var = "$(%s)" % word
+            var_expanded = make_expand(_view_parser, var)
+            if var != var_expanded:
+                text = "'$(%s)' => '%s'" % (word, var_expanded)
+    except Exception as e: print(e)
+    return text
 
 def _make_vl_popup_body(view: View, point) -> str:
     result  = VL_POPUP_TITLE
@@ -108,11 +121,35 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
     sublime_api.view_show_popup(
         self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
+def _parser_Makefile(file_path):
+    backup_cdir = os.getcwd()
+    cdir = os.path.dirname(file_path)
+    os.chdir(cdir)
+    result = make_vars(origin=["makefile"])
+    os.chdir(backup_cdir)
+    return result
+
+def _get_parser(file_type):
+    parsers = {
+        "Makefile": _parser_Makefile,
+    }
+    return parsers.get(file_type)
+
 # Listeners
 
 class ViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
-        pass # print(_get_view_syntax(self.view))
+        file_path = self.view.file_name()
+        file_name = os.path.basename(file_path)
+        file_type, _ = _get_view_syntax(self.view)
+        key = "%s_%s" % (file_type, file_name)
+        global _view_parsers
+        if not key in _view_parsers.keys():
+            parser = _get_parser(file_type)
+            if parser:
+                _view_parsers[key] = parser(file_path)
+        global _view_parser
+        _view_parser = _view_parsers.get(key)
 
 class HoverTextEventListener(sublime_plugin.EventListener):
   def on_hover(self, view, point, hover_zone):
@@ -122,7 +159,8 @@ class HoverTextEventListener(sublime_plugin.EventListener):
         my_content += VL_POPUP_STYLE
         my_content += _make_vl_popup_body(view, point)
         my_content += "</body>"
-        view.show_popup(my_content, location=point)
+        width, height = view.viewport_extent()
+        view.show_popup(my_content, location=point, max_width=width, max_height=height)
 
 # Commands
 
