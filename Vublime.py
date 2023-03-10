@@ -21,6 +21,7 @@ VL_FILE_SETTINGS   = VL_FILE_NAME_NOEXT + ".sublime-settings"
 
 settings = None
 captions = None
+extend_popup = None
 
 # Extend built-in popup
 
@@ -134,56 +135,61 @@ def _make_vl_popup_body(view: View, point) -> str:
 
 def _hooked_show_popup(self, content, flags=0, location=-1,
     max_width=320, max_height=240, on_navigate=None, on_hide=None):
-    if content.find(VL_POPUP_TITLE) == -1:
-        TAG_STYLE_CLOSED = "</style>"
-        insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
-        # append my content
-        new_content  = ""
-        new_content += content[:insert_position]
-        new_content += _make_vl_popup_body(self, location)
-        new_content += "<br>"
-        new_content += content[insert_position:]
-        # remove ":" from buit-in heading
-        new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
-        new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
-        # update content
-        content = new_content
-
-    sublime_api.view_show_popup(
-        self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
+    global extend_popup
+    if extend_popup:
+        if content.find(VL_POPUP_TITLE) == -1:
+            TAG_STYLE_CLOSED = "</style>"
+            insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
+            # append my content
+            new_content  = ""
+            new_content += content[:insert_position]
+            new_content += _make_vl_popup_body(self, location)
+            new_content += "<br>"
+            new_content += content[insert_position:]
+            # remove ":" from buit-in heading
+            new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
+            new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
+            # update content
+            content = new_content
+        sublime_api.view_show_popup(
+            self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
 # Listener - View Tracking
 
 class VublimeViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
-        file_path = self.view.file_name()
-        if type(file_path) is bytes: file_path = file_path.decode("utf-8")
-        file_path = str(file_path)
-        file_name = os.path.basename(file_path)
-        file_type, _ = _get_view_syntax(self.view)
-        key = "%s_%s" % (file_type, file_name)
-        global _view_funcators
-        if not key in _view_funcators.keys():
-            funcator = _mapping_funcators.get(file_type)
-            if funcator:
-                _view_funcators[key] = Funcator(funcator[0](file_path), funcator[1])
-                print(VL_FILE_NAME_NOEXT + " -> '%s' -> Ready" % key)
-        global _view_funcator
-        _view_funcator = _view_funcators.get(key)
+        global extend_popup
+        if extend_popup:
+            file_path = self.view.file_name()
+            if type(file_path) is bytes: file_path = file_path.decode("utf-8")
+            file_path = str(file_path)
+            file_name = os.path.basename(file_path)
+            file_type, _ = _get_view_syntax(self.view)
+            key = "%s_%s" % (file_type, file_name)
+            global _view_funcators
+            if not key in _view_funcators.keys():
+                funcator = _mapping_funcators.get(file_type)
+                if funcator:
+                    _view_funcators[key] = Funcator(funcator[0](file_path), funcator[1])
+                    print(VL_FILE_NAME_NOEXT + " -> '%s' -> Ready" % key)
+            global _view_funcator
+            _view_funcator = _view_funcators.get(key)
 
 # Listener - Mouse Hover
 
 class VublimeMouseHoverEventListener(sublime_plugin.EventListener):
   def on_hover(self, view, point, hover_zone):
-    if not view.is_popup_visible():
-        my_content  = ""
-        my_content += "<body id=show-definitions>"
-        my_content += VL_POPUP_STYLE
-        my_content += _make_vl_popup_body(view, point)
-        my_content += "</body>"
-        width, height = view.viewport_extent()
-        view.show_popup(
-          my_content, location=point, max_width=int(width * 0.5), max_height=int(height))
+    global extend_popup
+    if extend_popup:
+        if not view.is_popup_visible():
+            my_content  = ""
+            my_content += "<body id=show-definitions>"
+            my_content += VL_POPUP_STYLE
+            my_content += _make_vl_popup_body(view, point)
+            my_content += "</body>"
+            width, height = view.viewport_extent()
+            view.show_popup(
+              my_content, location=point, max_width=int(width * 0.5), max_height=int(height))
 
 # Command - About
 
@@ -424,6 +430,7 @@ def plugin_loaded():
     settings = sublime.load_settings(VL_FILE_SETTINGS)
     captions = settings.get("captions")
 
+    global extend_popup
     extend_popup = settings.get("extend_popup")
     if extend_popup: View.show_popup = _hooked_show_popup
 
