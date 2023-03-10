@@ -36,42 +36,44 @@ VL_POPUP_STYLE = '''
 </style>
 '''
 
-def _read_file_in_package(zip_file_path, file_name_inside_zip):
+def _read_file_in_package(zip_file_path, file_name):
     if os.path.exists(zip_file_path) and zipfile.is_zipfile(zip_file_path):
         zip = zipfile.ZipFile(zip_file_path)
-        with zip.open(file_name_inside_zip) as f:
-            return f.read()
+        with zip.open(file_name) as f: return f.read()
     return None
 
 def _get_executable_dir():
     return os.path.dirname(sublime.executable_path())
 
 def _get_view_syntax(view):
-    package_name = ""
+    regex_result = []
     package_folder = ""
     syntax_extension = ""
     syntax_package_file_path = view.settings().get("syntax")
-    print(syntax_package_file_path)
     if syntax_package_file_path.endswith(".sublime-syntax"):
-        package_folder = "/Packages"
         syntax_extension = ".sublime-syntax"
-        package_name = re.compile(r".*/(.*)" + syntax_extension).findall(syntax_package_file_path)[0]
+        regex_result = re.compile(r".*/(.*)/(.*)" + syntax_extension).findall(syntax_package_file_path)[0]
     elif syntax_package_file_path.endswith(".tmLanguage"):
-        package_folder = "/Data/Installed Packages"
         syntax_extension = ".tmLanguage"
-        package_name = re.compile(r".*/(.*)" + syntax_extension).findall(syntax_package_file_path)[0]
-    sublime_syntax_file_name  = package_name + syntax_extension
-    sublime_package_file_path = package_name + ".sublime-package"
-    sublime_package_file_path = os.path.join(_get_executable_dir() + package_folder, sublime_package_file_path)
-    syntax_file_data = _read_file_in_package(sublime_package_file_path, sublime_syntax_file_name)
-    try: # yaml file from .sublime-syntax
-        syntax_file = yaml.load(syntax_file_data, Loader=yaml.loader.BaseLoader)
-        return (syntax_file["name"], syntax_file["file_extensions"][0])
-    except: pass
-    try: # plist file from .tmLanguage
-        syntax_file = plistlib.readPlistFromBytes(syntax_file_data)
-        return (syntax_file["name"], syntax_file["fileTypes"][0])
-    except: pass
+        regex_result = re.compile(r".*/(.*)/(.*)" + syntax_extension).findall(syntax_package_file_path)[0]
+    package_file_name, syntax_file_name = regex_result[0], regex_result[1]
+    sublime_package_file_path = None
+    for package_folder in ["/Packages", "/Data/Installed Packages"]:
+        tmp = os.path.join(_get_executable_dir() + package_folder, package_file_name + ".sublime-package")
+        if os.path.exists(tmp):
+            sublime_package_file_path = tmp
+            break
+    if sublime_package_file_path:
+        sublime_syntax_file_name = syntax_file_name + syntax_extension
+        syntax_file_content = _read_file_in_package(sublime_package_file_path, sublime_syntax_file_name)
+        try: # yaml file from .sublime-syntax
+            syntax_file = yaml.load(syntax_file_content, Loader=yaml.loader.BaseLoader)
+            return (syntax_file["name"], syntax_file["file_extensions"][0])
+        except: pass
+        try: # plist file from .tmLanguage
+            syntax_file = plistlib.readPlistFromBytes(syntax_file_content)
+            return (syntax_file["name"], syntax_file["fileTypes"][0])
+        except: pass
     return (None, None)
 
 def _make_vl_popup_content(view, point) -> str:
@@ -110,7 +112,7 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
 
 class ViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
-        pass # print(_get_view_syntax(self.view))
+        print(_get_view_syntax(self.view))
 
 class HoverTextEventListener(sublime_plugin.EventListener):
   def on_hover(self, view, point, hover_zone):
