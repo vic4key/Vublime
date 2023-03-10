@@ -165,6 +165,8 @@ class HoverTextEventListener(sublime_plugin.EventListener):
 
 # Commands
 
+# About
+
 class VublimeAboutCommand(sublime_plugin.TextCommand) :
 
     def description(self) :
@@ -178,6 +180,8 @@ class VublimeAboutCommand(sublime_plugin.TextCommand) :
 
     def run(self, edit) :
         sublime.message_dialog(captions.get("info"))
+
+# Save Unsaved View as Temporary
 
 class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
