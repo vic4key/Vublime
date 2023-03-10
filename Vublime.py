@@ -1,7 +1,7 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, re, zipfile, json, plistlib
+import os, tempfile, datetime, re, zipfile, json, plistlib, webbrowser
 import sublime, sublime_plugin, sublime_api
 from sublime import View
 
@@ -116,7 +116,9 @@ _mapping_funcators = {
 }
 
 def _make_vl_popup_content(view, point) -> str:
+    result = []
     word = view.substr(view.word(point))
+    # additional information
     text = "No additional information for '%s'" % word
     try:
         global _view_funcator
@@ -124,14 +126,27 @@ def _make_vl_popup_content(view, point) -> str:
             tmp = _view_funcator.translator(word)
             if len(tmp) > 0: text = tmp
     except Exception as e: print(e)
-    return text
+    result.append(text)
+    # Google
+    text = "<a href='http://www.google.com/search?q=%s'>Search Google for '%s'</a>" % (word, word)
+    result.append(text)
+    # Bing
+    text = "<a href='https://www.bing.com/search?q=%s'>Search Bing for '%s'</a>" % (word, word)
+    result.append(text)
+    # Wikipedia
+    text = "<a href='https://en.wikipedia.org/wiki/Special:Search?search=%s'>Search Wikipedia for '%s'</a>" % (word, word)
+    result.append(text)
+    # Others
+    # your code here
+    return result
 
 def _make_vl_popup_body(view: View, point) -> str:
     result  = VL_POPUP_TITLE
-    result += "<p>"
-    result += _make_vl_popup_content(view, point)
-    result += "</p>"
+    result += "".join(["<p>" + e + "</p>" for e in _make_vl_popup_content(view, point)])
     return result
+
+def _hooked_on_navigate(href):
+    webbrowser.open(url=href)
 
 def _hooked_show_popup(self, content, flags=0, location=-1,
     max_width=320, max_height=240, on_navigate=None, on_hide=None):
@@ -151,6 +166,7 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
             new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
             # update content
             content = new_content
+        on_navigate = _hooked_on_navigate
         sublime_api.view_show_popup(
             self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
@@ -188,7 +204,8 @@ class VublimeMouseHoverEventListener(sublime_plugin.EventListener):
             my_content += _make_vl_popup_body(view, point)
             my_content += "</body>"
             width, height = view.viewport_extent()
-            view.show_popup(my_content, location=point, max_width=width, max_height=height)
+            view.show_popup(
+                my_content, location=point, max_width=width, max_height=height)
 
 # Command - About
 
