@@ -1,10 +1,11 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, re, zipfile, json, yaml, plistlib
+import os, tempfile, datetime, re, zipfile, json, plistlib
 import sublime, sublime_plugin, sublime_api
 from sublime import View
 
+from . import yaml
 from .make_var import *
 _view_parsers = {}
 _view_parser  = None
