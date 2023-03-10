@@ -7,6 +7,7 @@ from sublime import View
 
 from . import yaml
 from .make_var import *
+
 _view_parsers = {}
 _view_parser  = None
 
@@ -40,6 +41,11 @@ VL_POPUP_STYLE = '''
     }
 </style>
 '''
+
+def _regex(text, regex, flags = re.MULTILINE | re.IGNORECASE): # https://regex101.com/
+    result = re.findall(regex, text, flags)
+    if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
+    return result
 
 def _read_file_in_package(zip_file_path, file_name):
     if os.path.exists(zip_file_path) and zipfile.is_zipfile(zip_file_path):
@@ -136,9 +142,9 @@ def _get_parser(file_type):
     }
     return parsers.get(file_type)
 
-# Listeners
+# Listener - View Tracking
 
-class ViewTracking(sublime_plugin.ViewEventListener):
+class VublimeViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
         file_path = self.view.file_name()
         if type(file_path) is bytes: file_path = file_path.decode("utf-8")
@@ -154,7 +160,9 @@ class ViewTracking(sublime_plugin.ViewEventListener):
         global _view_parser
         _view_parser = _view_parsers.get(key)
 
-class HoverTextEventListener(sublime_plugin.EventListener):
+# Listener - Mouse Hover
+
+class VublimeMouseHoverEventListener(sublime_plugin.EventListener):
   def on_hover(self, view, point, hover_zone):
     if not view.is_popup_visible():
         my_content  = ""
@@ -166,9 +174,7 @@ class HoverTextEventListener(sublime_plugin.EventListener):
         view.show_popup(
           my_content, location=point, max_width=int(width * 0.5), max_height=int(height))
 
-# Commands
-
-# About
+# Command - About
 
 class VublimeAboutCommand(sublime_plugin.TextCommand) :
 
@@ -184,7 +190,7 @@ class VublimeAboutCommand(sublime_plugin.TextCommand) :
     def run(self, edit) :
         sublime.message_dialog(captions.get("info"))
 
-# Save Unsaved View as Temporary
+# Command - Save Unsaved View as Temporary
 
 class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
 
@@ -244,7 +250,7 @@ class VublimeSaveAsTemporaryCommand(sublime_plugin.TextCommand) :
         self.view.run_command("save")
         sublime.status_message("Saved as '%s'" % file_path)
 
-# Open File in View
+# Command - Open File in View
 
 class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
 
@@ -312,24 +318,17 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
     def normalize_path(self, path):
         return path.replace("\\\\", os.path.sep).replace("\\", os.path.sep).replace("/", os.path.sep)
 
-# Report Logging
-
-# https://regex101.com/
-
-def RegEx(text, regex, flags = re.MULTILINE | re.IGNORECASE):
-    result = re.findall(regex, text, flags)
-    if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
-    return result
-
-TYPES = {
-    "str": str,
-    "int": int,
-    "float": float,
-}
+# Command - Report Logging
 
 class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
+
+        TYPES = {
+            "str": str,
+            "int": int,
+            "float": float,
+        }
 
         # load patterns from json file
         groups = []
@@ -355,7 +354,7 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
         for group in groups:
             name, pattern, dtype = group["name"], group["pattern"], group["type"]
 
-            matches = RegEx(selected_text, pattern)
+            matches = _regex(selected_text, pattern)
             # print(matches)
 
             try:
