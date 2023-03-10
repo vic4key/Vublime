@@ -167,6 +167,7 @@ class VublimeViewTracking(sublime_plugin.ViewEventListener):
             funcator = _mapping_funcators.get(file_type)
             if funcator:
                 _view_funcators[key] = Funcator(funcator[0](file_path), funcator[1])
+                print(VL_FILE_NAME_NOEXT + " -> '%s' -> Ready" % key)
         global _view_funcator
         _view_funcator = _view_funcators.get(key)
 
