@@ -1,7 +1,7 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, re, zipfile, json, yaml
+import os, tempfile, datetime, re, zipfile, json, yaml, plistlib
 import sublime, sublime_plugin, sublime_api
 from sublime import View
 
@@ -40,7 +40,6 @@ def _read_file_in_package(zip_file_path, file_name_inside_zip):
     if os.path.exists(zip_file_path) and zipfile.is_zipfile(zip_file_path):
         zip = zipfile.ZipFile(zip_file_path)
         with zip.open(file_name_inside_zip) as f:
-            print(f, zip_file_path, file_name_inside_zip)
             return f.read()
     return None
 
@@ -48,22 +47,31 @@ def _get_executable_dir():
     return os.path.dirname(sublime.executable_path())
 
 def _get_view_syntax(view):
-    try :
-        syntax_package_file_path = view.settings().get("syntax")
-        if syntax_package_file_path.endswith(".sublime-syntax"):
-            l = re.compile(r".*/(.*).sublime-syntax").findall(syntax_package_file_path)
-            if len(l) == 1:
-                sublime_syntax_file_name  = l[0] + ".sublime-syntax"
-                sublime_package_file_path = l[0] + ".sublime-package"
-                sublime_package_file_path = os.path.join(_get_executable_dir() + "/Packages", sublime_package_file_path)
-                syntax_file_data = _read_file_in_package(sublime_package_file_path, sublime_syntax_file_name)
-                if syntax_file_data:
-                    syntax_file_yaml = yaml.load(syntax_file_data, Loader=yaml.loader.BaseLoader)
-                    extensions = syntax_file_yaml["file_extensions"]
-                    return (syntax_file_yaml["name"], syntax_file_yaml["file_extensions"][0])
-        elif syntax_package_file_path.endswith(".tmLanguage"):
-            print("not support tmLanguage")
-    except Exception as e: print(e)
+    package_name = ""
+    package_folder = ""
+    syntax_extension = ""
+    syntax_package_file_path = view.settings().get("syntax")
+    print(syntax_package_file_path)
+    if syntax_package_file_path.endswith(".sublime-syntax"):
+        package_folder = "/Packages"
+        syntax_extension = ".sublime-syntax"
+        package_name = re.compile(r".*/(.*)" + syntax_extension).findall(syntax_package_file_path)[0]
+    elif syntax_package_file_path.endswith(".tmLanguage"):
+        package_folder = "/Data/Installed Packages"
+        syntax_extension = ".tmLanguage"
+        package_name = re.compile(r".*/(.*)" + syntax_extension).findall(syntax_package_file_path)[0]
+    sublime_syntax_file_name  = package_name + syntax_extension
+    sublime_package_file_path = package_name + ".sublime-package"
+    sublime_package_file_path = os.path.join(_get_executable_dir() + package_folder, sublime_package_file_path)
+    syntax_file_data = _read_file_in_package(sublime_package_file_path, sublime_syntax_file_name)
+    try: # yaml file from .sublime-syntax
+        syntax_file = yaml.load(syntax_file_data, Loader=yaml.loader.BaseLoader)
+        return (syntax_file["name"], syntax_file["file_extensions"][0])
+    except: pass
+    try: # plist file from .tmLanguage
+        syntax_file = plistlib.readPlistFromBytes(syntax_file_data)
+        return (syntax_file["name"], syntax_file["fileTypes"][0])
+    except: pass
     return (None, None)
 
 def _make_vl_popup_content(view, point) -> str:
