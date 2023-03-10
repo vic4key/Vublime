@@ -113,7 +113,7 @@ def make_expand(M, val):
         if cnt > 1000:
             print("Error maybe loop detected cnt: {}".format(cnt))
             sys.exit(1)
-    print("cnt=",cnt)
+    # print("cnt=",cnt)
     return s
 
 if __name__ == '__main__':
