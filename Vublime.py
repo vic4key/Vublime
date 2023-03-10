@@ -188,8 +188,7 @@ class VublimeMouseHoverEventListener(sublime_plugin.EventListener):
             my_content += _make_vl_popup_body(view, point)
             my_content += "</body>"
             width, height = view.viewport_extent()
-            view.show_popup(
-              my_content, location=point, max_width=int(width * 0.5), max_height=int(height))
+            view.show_popup(my_content, location=point, max_width=width, max_height=height)
 
 # Command - About
 
