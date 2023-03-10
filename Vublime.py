@@ -112,7 +112,7 @@ def _hooked_show_popup(self, content, flags=0, location=-1,
 
 class ViewTracking(sublime_plugin.ViewEventListener):
     def on_activated_async(self):
-        print(_get_view_syntax(self.view))
+        pass # print(_get_view_syntax(self.view))
 
 class HoverTextEventListener(sublime_plugin.EventListener):
   def on_hover(self, view, point, hover_zone):
