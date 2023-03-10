@@ -8,8 +8,8 @@ from sublime import View
 from . import yaml
 from .make_var import *
 
-_view_parsers = {}
-_view_parser  = None
+_view_funcators = {}
+_view_funcator  = None
 
 VL_FILE_PATH = __file__
 VL_FILE_NAME = os.path.basename(VL_FILE_PATH)
@@ -42,7 +42,7 @@ VL_POPUP_STYLE = '''
 </style>
 '''
 
-def _regex(text, regex, flags = re.MULTILINE | re.IGNORECASE): # https://regex101.com/
+def _reg_ex(text, regex, flags = re.MULTILINE | re.IGNORECASE): # https://regex101.com/
     result = re.findall(regex, text, flags)
     if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
     return result
@@ -87,16 +87,41 @@ def _get_view_syntax(view):
         except: pass
     return (None, None)
 
+class Funcator():
+    evaluator  = None
+    translator = None
+    def __init__(self, evaluator, translator):
+        self.evaluator  = evaluator
+        self.translator = translator
+
+def _parser_Makefile(file_path):
+    backup_cdir = os.getcwd()
+    cdir = os.path.dirname(file_path)
+    os.chdir(cdir)
+    result = make_vars(origin=["makefile"])
+    os.chdir(backup_cdir)
+    return result
+
+def _translator_Makefile(text):
+    result = ""
+    var = "$(%s)" % text
+    var_expanded = make_expand(_view_funcator.evaluator, var)
+    if var != var_expanded:
+        result = "'$(%s)' => '%s'" % (text, var_expanded)
+    return result
+
+_mapping_funcators = {
+    "Makefile": (_parser_Makefile, _translator_Makefile),
+}
+
 def _make_vl_popup_content(view, point) -> str:
     word = view.substr(view.word(point))
     text = "No additional information for '%s'" % word
     try:
-        global _view_parser
-        if _view_parser:
-            var = "$(%s)" % word
-            var_expanded = make_expand(_view_parser, var)
-            if var != var_expanded:
-                text = "'$(%s)' => '%s'" % (word, var_expanded)
+        global _view_funcator
+        if _view_funcator:
+            tmp = _view_funcator.translator(word)
+            if len(tmp) > 0: text = tmp
     except Exception as e: print(e)
     return text
 
@@ -109,38 +134,23 @@ def _make_vl_popup_body(view: View, point) -> str:
 
 def _hooked_show_popup(self, content, flags=0, location=-1,
     max_width=320, max_height=240, on_navigate=None, on_hide=None):
-
     if content.find(VL_POPUP_TITLE) == -1:
         TAG_STYLE_CLOSED = "</style>"
         insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
-
+        # append my content
         new_content  = ""
         new_content += content[:insert_position]
         new_content += _make_vl_popup_body(self, location)
         new_content += "<br>"
         new_content += content[insert_position:]
-
+        # remove ":" from buit-in heading
         new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
         new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
-
+        # update content
         content = new_content
 
     sublime_api.view_show_popup(
         self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
-
-def _parser_Makefile(file_path):
-    backup_cdir = os.getcwd()
-    cdir = os.path.dirname(file_path)
-    os.chdir(cdir)
-    result = make_vars(origin=["makefile"])
-    os.chdir(backup_cdir)
-    return result
-
-def _get_parser(file_type):
-    parsers = {
-        "Makefile": _parser_Makefile,
-    }
-    return parsers.get(file_type)
 
 # Listener - View Tracking
 
@@ -152,13 +162,13 @@ class VublimeViewTracking(sublime_plugin.ViewEventListener):
         file_name = os.path.basename(file_path)
         file_type, _ = _get_view_syntax(self.view)
         key = "%s_%s" % (file_type, file_name)
-        global _view_parsers
-        if not key in _view_parsers.keys():
-            parser = _get_parser(file_type)
-            if parser:
-                _view_parsers[key] = parser(file_path)
-        global _view_parser
-        _view_parser = _view_parsers.get(key)
+        global _view_funcators
+        if not key in _view_funcators.keys():
+            funcator = _mapping_funcators.get(file_type)
+            if funcator:
+                _view_funcators[key] = Funcator(funcator[0](file_path), funcator[1])
+        global _view_funcator
+        _view_funcator = _view_funcators.get(key)
 
 # Listener - Mouse Hover
 
@@ -404,6 +414,8 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
     def is_visible(self) :
         return True
+
+# Plugin Entry Point
 
 def plugin_loaded():
 
