@@ -113,7 +113,7 @@ def my_popup_content(view, point) -> list:
             temp = temp.encode("utf-8")
             temp = base64.b64encode(temp)
             temp = temp.decode("utf-8")
-            text = "<a href='%s'>Copy Additional Information to Clipboard</a>" % temp
+            text = "<a href='%s:%s'>Copy Additional Information to Clipboard</a>" % (VL_FILE_NAME_NOEXT, temp)
             result.append(text)
         else:
             result.append(text)
@@ -133,8 +133,9 @@ def my_popup_content(view, point) -> list:
 def my_on_navigate(href) -> None:
     if href.startswith("http"):
         webbrowser.open(url=href)
-    else:
-        temp = base64.b64decode(href)
+    elif href.startswith(VL_FILE_NAME_NOEXT):
+        temp = href[len(VL_FILE_NAME_NOEXT)+1:] # +1 for ":"
+        temp = base64.b64decode(temp)
         temp = temp.decode("utf-8")
         pyperclip_copy(temp)
 
