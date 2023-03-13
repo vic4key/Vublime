@@ -119,7 +119,7 @@ _mapping_funcators = {
 def _make_vl_popup_content(view, point) -> str:
     result = []
     word = view.substr(view.word(point))
-    # additional information
+    # Additional Information
     text = "No additional information for '%s'" % word
     global _view_funcator
     if _view_funcator:
