@@ -1,12 +1,13 @@
 # Vublime 1.0
 # Author Vic P.
 
-import os, tempfile, datetime, re, zipfile, json, plistlib, webbrowser
+import os, tempfile, datetime, re, zipfile, json, plistlib, webbrowser, base64
 import sublime, sublime_plugin, sublime_api
 from sublime import View
 
 from . import yaml
 from .make_var import *
+from .pyperclip import copy as pyperclip_copy
 
 _view_funcators = {}
 _view_funcator  = None
@@ -108,7 +109,7 @@ def _translator_Makefile(text):
     var = "$(%s)" % text
     var_expanded = make_expand(_view_funcator.evaluator, var)
     if var != var_expanded:
-        result = "'$(%s)' => '%s'" % (text, var_expanded)
+        result = var_expanded # "'$(%s)' => '%s'" % (text, var_expanded)
     return result
 
 _mapping_funcators = {
@@ -120,13 +121,20 @@ def _make_vl_popup_content(view, point) -> str:
     word = view.substr(view.word(point))
     # additional information
     text = "No additional information for '%s'" % word
-    try:
-        global _view_funcator
-        if _view_funcator:
-            tmp = _view_funcator.translator(word)
-            if len(tmp) > 0: text = tmp
-    except Exception as e: print(e)
-    result.append(text)
+    global _view_funcator
+    if _view_funcator:
+        temp = _view_funcator.translator(word)
+        if len(temp) > 0:
+            # Display Additional Information
+            text = "'$(%s)' => '%s'" % (word, temp)
+            result.append(text)
+            # Copy Additional Information to Clipboard
+            temp = base64.b64encode(temp.encode("utf-8"))
+            temp = temp.decode("utf-8")
+            text = "<a href='%s'>Copy Additional Information to Clipboard</a>" % temp
+            result.append(text)
+        else:
+            result.append(text)
     # Google
     text = "<a href='http://www.google.com/search?q=%s'>Search Google for '%s'</a>" % (word, word)
     result.append(text)
@@ -146,7 +154,12 @@ def _make_vl_popup_body(view: View, point) -> str:
     return result
 
 def _hooked_on_navigate(href):
-    webbrowser.open(url=href)
+    if href.startswith("http"):
+        webbrowser.open(url=href)
+    else:
+        temp = base64.b64decode(href)
+        temp = temp.decode("utf-8")
+        pyperclip_copy(temp)
 
 def _hooked_show_popup(self, content, flags=0, location=-1,
     max_width=320, max_height=240, on_navigate=None, on_hide=None):
