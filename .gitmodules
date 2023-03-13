@@ -1,0 +1,3 @@
+[submodule "sublime_text_popup_extended"]
+	path = sublime_text_popup_extended
+	url = https://github.com/vic4key/sublime_text_popup_extended.git

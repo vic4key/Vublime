@@ -8,6 +8,7 @@ from sublime import View
 from . import yaml
 from .make_var import *
 from .pyperclip import copy as pyperclip_copy
+from .sublime_text_popup_extended import *
 
 _view_funcators = {}
 _view_funcator  = None
@@ -23,26 +24,6 @@ VL_FILE_SETTINGS   = VL_FILE_NAME_NOEXT + ".sublime-settings"
 settings = None
 captions = None
 extend_popup = None
-
-# Extend built-in popup
-
-VL_POPUP_TITLE = "<h1>Vublime</h1>"
-VL_POPUP_STYLE = '''
-<style>
-    body {
-        font-family: system;
-    }
-    h1 {
-        font-size: 1.1rem;
-        font-weight: bold;
-        margin: 0 0 0.25em 0;
-    }
-    p {
-        font-size: 1.05rem;
-        margin: 0;
-    }
-</style>
-'''
 
 def _reg_ex(text, regex, flags = re.MULTILINE | re.IGNORECASE): # https://regex101.com/
     result = re.findall(regex, text, flags)
@@ -116,7 +97,7 @@ _mapping_funcators = {
     "Makefile": (_parser_Makefile, _translator_Makefile),
 }
 
-def _make_vl_popup_content(view, point) -> str:
+def _my_popup_content(view, point) -> list:
     result = []
     word = view.substr(view.word(point))
     # Additional Information
@@ -149,40 +130,13 @@ def _make_vl_popup_content(view, point) -> str:
     # your code here
     return result
 
-def _make_vl_popup_body(view: View, point) -> str:
-    result  = VL_POPUP_TITLE
-    result += "".join(["<p>" + e + "</p>" for e in _make_vl_popup_content(view, point)])
-    return result
-
-def _hooked_on_navigate(href):
+def _my_on_navigate(href):
     if href.startswith("http"):
         webbrowser.open(url=href)
     else:
         temp = base64.b64decode(href)
         temp = temp.decode("utf-8")
         pyperclip_copy(temp)
-
-def _hooked_show_popup(self, content, flags=0, location=-1,
-    max_width=320, max_height=240, on_navigate=None, on_hide=None):
-    global extend_popup
-    if extend_popup:
-        if content.find(VL_POPUP_TITLE) == -1:
-            TAG_STYLE_CLOSED = "</style>"
-            insert_position = content.find(TAG_STYLE_CLOSED) + len(TAG_STYLE_CLOSED) + 1
-            # append my content
-            new_content  = ""
-            new_content += content[:insert_position]
-            new_content += _make_vl_popup_body(self, location)
-            new_content += "<br>"
-            new_content += content[insert_position:]
-            # remove ":" from buit-in heading
-            new_content = new_content.replace("<h1>Definition:</h1>", "<h1>Definition</h1>")
-            new_content = new_content.replace("<h1>References:</h1>", "<h1>References</h1>")
-            # update content
-            content = new_content
-        on_navigate = _hooked_on_navigate
-        sublime_api.view_show_popup(
-            self.view_id, location, content, flags, max_width, max_height, on_navigate, on_hide)
 
 # Listener - View Tracking
 
@@ -204,22 +158,6 @@ class VublimeViewTracking(sublime_plugin.ViewEventListener):
                     print(VL_FILE_NAME_NOEXT + " -> '%s' -> Ready" % key)
             global _view_funcator
             _view_funcator = _view_funcators.get(key)
-
-# Listener - Mouse Hover
-
-class VublimeMouseHoverEventListener(sublime_plugin.EventListener):
-  def on_hover(self, view, point, hover_zone):
-    global extend_popup
-    if extend_popup:
-        if not view.is_popup_visible():
-            my_content  = ""
-            my_content += "<body id=show-definitions>"
-            my_content += VL_POPUP_STYLE
-            my_content += _make_vl_popup_body(view, point)
-            my_content += "</body>"
-            width, height = view.viewport_extent()
-            view.show_popup(
-                my_content, location=point, max_width=width, max_height=height)
 
 # Command - About
 
@@ -462,7 +400,11 @@ def plugin_loaded():
 
     global extend_popup
     extend_popup = settings.get("extend_popup")
-    if extend_popup: View.show_popup = _hooked_show_popup
+    if extend_popup:
+        sublime_text_popup_extended.setup(
+            heading_text=VL_FILE_NAME_NOEXT,
+            fn_popup_content=_my_popup_content,
+            fn_on_navigate=_my_on_navigate)
 
     msg_ready = VL_FILE_NAME_NOEXT + " -> READY"
     sublime.status_message(msg_ready)
