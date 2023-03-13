@@ -129,7 +129,8 @@ def _make_vl_popup_content(view, point) -> str:
             text = "'$(%s)' => '%s'" % (word, temp)
             result.append(text)
             # Copy Additional Information to Clipboard
-            temp = base64.b64encode(temp.encode("utf-8"))
+            temp = temp.encode("utf-8")
+            temp = base64.b64encode(temp)
             temp = temp.decode("utf-8")
             text = "<a href='%s'>Copy Additional Information to Clipboard</a>" % temp
             result.append(text)
