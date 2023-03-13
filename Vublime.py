@@ -97,7 +97,7 @@ _mapping_funcators = {
     "Makefile": (_parser_Makefile, _translator_Makefile),
 }
 
-def _my_popup_content(view, point) -> list:
+def my_popup_content(view, point) -> list:
     result = []
     word = view.substr(view.word(point))
     # Additional Information
@@ -130,7 +130,7 @@ def _my_popup_content(view, point) -> list:
     # your code here
     return result
 
-def _my_on_navigate(href):
+def my_on_navigate(href) -> None:
     if href.startswith("http"):
         webbrowser.open(url=href)
     else:
@@ -403,8 +403,8 @@ def plugin_loaded():
     if extend_popup:
         sublime_text_popup_extended.setup(
             heading_text=VL_FILE_NAME_NOEXT,
-            fn_popup_content=_my_popup_content,
-            fn_on_navigate=_my_on_navigate)
+            fn_popup_content=my_popup_content,
+            fn_on_navigate=my_on_navigate)
 
     msg_ready = VL_FILE_NAME_NOEXT + " -> READY"
     sublime.status_message(msg_ready)
