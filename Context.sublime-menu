@@ -16,6 +16,12 @@
 				"command": "vublime_report_logging_in_view"
 			},
 			{
+				"command": "vublime_report_lines_matching"
+			},
+			{
+				"command": "vublime_evaluate_expression_lines"
+			},
+			{
 				"command": "vublime_about"
 			},
 		]

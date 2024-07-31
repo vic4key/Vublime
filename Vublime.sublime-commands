@@ -11,4 +11,12 @@
 		"caption": "Vublime - Report Logging",
 		"command": "vublime_report_logging_in_view",
 	},
+	{
+		"caption": "Vublime - Report Lines Matching",
+		"command": "vublime_report_lines_matching",
+	},
+	{
+		"caption": "Vublime - Evaluate Expression Lines",
+		"command": "vublime_evaluate_expression_lines",
+	},
 ]

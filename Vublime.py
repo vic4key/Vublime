@@ -391,6 +391,122 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
     def is_visible(self) :
         return True
 
+class NewInputItemHandler(sublime_plugin.ListInputHandler):
+    # https://github.com/sublimehq/sublime_text/issues/3882
+
+    def list_items(self):
+        items = []
+        active_view = sublime.active_window().active_view()
+        for window in sublime.windows():
+            for view in window.views():
+                if view == active_view: continue
+                group_id, _ = window.get_view_index(view)
+                view_id = view.id()
+                view_name = view.name() or view.file_name().split("\\")[-1]
+                item = sublime.ListInputItem(
+                    text = f"Group {group_id}: {view_name}",
+                    value = view_id,
+                    details = "" if not view.is_dirty() else "*Modified*",
+                    annotation = "" if view.file_name() else "*Untitled*",
+                    kind = (sublime.KIND_ID_SNIPPET, "T", "Text Command")
+                )
+                items.append(item)
+        return items
+
+    def placeholder(self):
+        active_view = sublime.active_window().active_view()
+        return f"The base view is '{active_view.name()}' ..."
+
+    def confirm(self, selected_item):
+        pass # print(selected_item)
+
+    def is_enabled(self, dirs=None):
+        return True
+
+    def is_visible(self, dirs=None):
+        return True
+
+class VublimeReportLinesMatchingCommand(sublime_plugin.WindowCommand):
+
+    def run(self, new_input_item_handler):
+        print("\n")
+
+        selected_view_id = new_input_item_handler
+        selected_view = sublime.View(selected_view_id)
+        if not (selected_text_in_selected_view := selected_view.substr(selected_view.line(selected_view.sel()[0])).strip()):
+            print("Not selected text in the selected view.")
+            return
+
+        active_window = sublime.active_window()
+        active_view   = active_window.active_view()
+        if not (selected_text_in_active_view := active_view.substr(active_view.line(active_view.sel()[0])).strip()):
+            print("Not selected text in the active view.")
+            return
+
+        d = {
+            "included": [],
+            "excluded": [],
+        }
+
+        normed_selected_lines_in_selected_view = [line.strip().lower() for line in selected_text_in_selected_view.split("\n")]
+
+        for line in selected_text_in_active_view.split("\n"):
+            if normed_line := line.strip().lower():
+                if normed_line in normed_selected_lines_in_selected_view:
+                    d["included"].append(line)
+                else:
+                    d["excluded"].append(line)
+
+        print(f"List MATCHED items of the active view '{active_view.name()}' in the selected view '{selected_view.name()}' are following:")
+        if d["included"]:
+            for line in d["included"]: print("\t" + line)
+        else: print("\t<N/A>")
+
+        print(f"List NOT MATCHED items of the active view '{active_view.name()}' in the selected view '{selected_view.name()}' are following:")
+        if d["excluded"]:
+            for line in d["excluded"]: print("\t" + line)
+        else: print("<N/A>")
+
+        active_window.run_command("show_panel", {"panel": "console"})
+
+    def input(self, args):
+        if args is not None: return NewInputItemHandler()
+
+    def description(self) :
+        return captions.get("report_lines_matching")
+
+class VublimeEvaluateExpressionLines(sublime_plugin.TextCommand):
+
+    def run(self, edit):
+        print("\n")
+
+        active_window = sublime.active_window()
+        active_view   = active_window.active_view()
+        if not (selected_text_in_active_view := active_view.substr(active_view.line(active_view.sel()[0])).strip()):
+            print("Not selected text in the active view.")
+            return
+
+        print(f"The results of the selected expressions in the active view '{active_view.name()}' are following:")
+        for line in selected_text_in_active_view.split("\n"):
+            if normed_line := line.strip().lower():
+                try:
+                    result = eval(normed_line)
+                    if type(result) is float: result = result
+                    print(f"{normed_line} = {result}")
+                except:
+                    print(f"{normed_line} = <ERROR: EVALUTATION FAILED>")
+
+        active_window.run_command("show_panel", {"panel": "console"})
+
+    def description(self) :
+        return captions.get("evaluate_expression_lines")
+
+    def is_enabled(self) :
+        return True
+
+    def is_visible(self) :
+        return True
+
 # Plugin Entry Point
 
 def plugin_loaded():
