@@ -367,7 +367,7 @@ class VublimeReportLoggingInViewCommand(sublime_plugin.TextCommand):
 
         # df = pd.DataFrame(result)
         # print(df)
-        
+
         print(" [REPORT] ".center(80, "-"))
 
         total = sum(result.values())
