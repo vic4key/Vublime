@@ -25,7 +25,7 @@ settings = None
 captions = None
 extend_popup = None
 
-def _reg_ex(text, regex, flags = re.MULTILINE | re.IGNORECASE): # https://regex101.com/
+def _regex(text, regex, flags = re.MULTILINE | re.IGNORECASE): # https://regex101.com/
     result = re.findall(regex, text, flags)
     if len(result) == 1 and not type(result[0]) is tuple: result = [(result[0],)]
     return result
@@ -251,12 +251,13 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
 
             # extract string on selected line
             parts, sep = text.split('"'), '"'
-            if len(parts) < 2: parts, sep = text.split('\''), '\''
-            if len(parts) < 2:
+            parts = [part.strip("\n\r\t ") for part in parts]
+            # if len(parts) < 2: parts, sep = text.split('\''), '\''
+            if len(parts) == 0:
                 sublime.message_dialog("Not found any file")
                 return
 
-            # extract a relative file nam from the extracted string
+            # extract a relative file name from the extracted string
             file_name = parts[text[:col].count(sep)]
             file_name = self.normalize_path(file_name)
 
@@ -279,6 +280,13 @@ class VublimeOpenFileInViewCommand(sublime_plugin.TextCommand):
             # join the file name with the directory of the current viewing file
             if not os.path.isfile(file_path):
                 file_dir  = os.path.dirname(self.view.file_name())
+                file_dir  = self.normalize_path(file_dir)
+                file_path = os.path.join(file_dir, file_name)
+
+            # join the file name with the default downloads directory
+            if not os.path.isfile(file_path):
+                from pathlib import Path
+                file_dir  = str(Path.home() / "Downloads")
                 file_dir  = self.normalize_path(file_dir)
                 file_path = os.path.join(file_dir, file_name)
 
